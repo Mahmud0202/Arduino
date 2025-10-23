@@ -1,0 +1,65 @@
+const int LDR_PIN = A0;
+const int POT_PIN = A1;
+const int LED_PIN = 9;
+const int BUZZ_PIN = 8;
+const int BUTTON_PIN = 7;
+
+int lastButtonState = HIGH;  
+int buttonState = HIGH;     
+bool buzzState = false;      
+bool lightThresholdChanged = false; 
+
+void setup() {
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUZZ_PIN, OUTPUT);
+  pinMode(LDR_PIN, INPUT);
+  pinMode(POT_PIN, INPUT);
+  pinMode(BUTTON_PIN, INPUT_PULLUP); 
+  Serial.begin(9600);
+}
+
+void loop() {
+  buttonState = digitalRead(BUTTON_PIN);  
+  if (lastButtonState == HIGH && buttonState == LOW) {
+    if (!buzzState) {
+ 
+      digitalWrite(BUZZ_PIN, HIGH);
+      buzzState = true;
+      Serial.println("Buzz ON");
+    } else {
+  
+      digitalWrite(BUZZ_PIN, LOW);
+      buzzState = false;
+      lightThresholdChanged = true; 
+      Serial.println("Buzz OFF");
+    }
+    delay(200); 
+  }
+
+  
+  lastButtonState = buttonState;
+
+  int light = analogRead(LDR_PIN);    
+  int threshold = analogRead(POT_PIN);
+
+  
+  if (lightThresholdChanged) {
+    light = 400;
+    Serial.println("LDR value set to 400.");
+  }
+
+  Serial.print("Light: ");
+  Serial.print(light);
+  Serial.print("  Threshold: ");
+  Serial.print(threshold);
+  Serial.print("  Button: ");
+  Serial.println(buttonState == LOW ? "Pressed" : "Released");
+
+  if (light < threshold) {
+    digitalWrite(LED_PIN, HIGH);    
+  } else {
+    digitalWrite(LED_PIN, LOW);  
+  }
+
+  delay(100);
+}
