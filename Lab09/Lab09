@@ -1,0 +1,71 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// --- LCD орнотуу (дарек 0x27 же 0x3F болушу мүмкүн) ---
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+const int tempPin = A0;   // LM35 сенсору
+const int ldrPin = A1;    // Фоторезистор
+const int potPin = A2;    // Потенциометр (жарык порогу)
+const int ledPin = 9;     // Светодиод
+const int buzzerPin = 8;  // Зуммер
+
+void setup() {
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+  Serial.begin(9600);
+
+  lcd.init();        // LCD'ни инициализациялоо
+  lcd.backlight();   // Подсветканы күйгүзүү
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Smart System");
+  delay(1500);
+}
+
+void loop() {
+  // ---- Сенсорлорду окуу ----
+  int tempValue = analogRead(tempPin);
+  float voltage = tempValue * 5.0 / 1023.0;
+  float tempC = voltage * 100.0;
+
+  int lightValue = analogRead(ldrPin);
+  int potValue = analogRead(potPin);
+  int lightThreshold = map(potValue, 0, 1023, 100, 800);
+
+  // ---- Негизги логика ----
+  bool alarm = (tempC > 30 || lightValue < lightThreshold);
+
+  if (alarm) {
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzerPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+  }
+
+  // ---- LCD'ге маалымат чыгаруу ----
+  lcd.setCursor(0, 0);
+  lcd.print("T:");
+  lcd.print(tempC, 1);
+  lcd.print("C  L:");
+  lcd.print(lightValue);
+  lcd.print("   "); // эски текстти тазалоо
+
+  lcd.setCursor(0, 1);
+  lcd.print("Thr:");
+  lcd.print(lightThreshold);
+  lcd.print(" ");
+  if (alarm) lcd.print("ALARM!");
+  else lcd.print("OK    ");
+
+  // ---- Serial Monitor үчүн (кошумча) ----
+  Serial.print("T=");
+  Serial.print(tempC);
+  Serial.print("C | Light=");
+  Serial.print(lightValue);
+  Serial.print(" | Thr=");
+  Serial.println(lightThreshold);
+
+  delay(500);
+}
